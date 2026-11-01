@@ -1,0 +1,13 @@
+.gradle/
+build/
+run/
+.local/
+.research/
+node_modules/
+*.log
+.idea/
+.vscode/
+.DS_Store
+t3minecraft.json
+bridge.config.json
+notes.json

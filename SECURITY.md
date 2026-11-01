@@ -1,0 +1,15 @@
+# Privacy and permissions
+
+- The server binds only `127.0.0.1`; every HTTP route requires the generated 256-bit bearer token. It does not enable CORS and rejects requests carrying a browser Origin header.
+- `init` writes config files with mode `0600` and directories with `0700` where the OS supports POSIX permissions. On Windows, protect the directory with your user account's ACLs. Do not publish `.local`, game config, notes, logs, T3 credentials, or provider keys.
+- The token authorizes bridge operations including sending requests to the configured T3 agent. Treat it like a local password. Anyone who can read your files as your OS account can generally read this token and your T3 installation too.
+- Public speech, ongoing context sharing, and chat listening are off by default and reset on disconnect/world change. The mod requires `/t3 public on` before broadcasting agent text. It sends as your own player, prefixed `[T3]`; it never calls the game command API.
+- Game text is rendered literally, without clickable/hoverable components or legacy formatting codes. Public text removes controls and format characters, is prefixed before sending, and stays within Minecraft's chat packet length.
+- Requests only start from explicit `/t3 ask`, `/t3 feed`, or `/t3 snapshot`. Captured chat is bounded context, not an automatic trigger. Context, notes, and other players' chat are labeled untrusted in the prompt. This reduces accidental instruction mixing; it does **not** make an LLM immune to prompt injection.
+- Your T3 agent retains the permissions of its configured thread. The bridge is **not a sandbox for T3**. Prefer a thread with restrictive tool permissions, and review requests inside T3. The bridge never answers approval dialogs or changes model/permission settings.
+- Player prompts are passed to the CLI through stdin, with `shell: false`. No game text is interpolated into shell commands. The agent itself may still invoke tools if its T3 permissions allow it.
+- Queued jobs are discarded if their game session has disconnected before they start. In-flight T3 turns are not cancelled by disconnect, bridge shutdown, or a wait timeout. Their replies stay associated with the original game session and cannot appear in a newly connected world.
+- Notes persist locally and accompany future submitted requests. Optional context can contain exact coordinates and inventory. Submitted material enters the T3 conversation and the selected provider's normal data handling. Clearing bridge notes does not erase that history.
+- This release has no telemetry or external analytics. Minecraft/Fabric downloads and your T3 provider use their own networks. No screen captures, world files, server IPs, or unrelated local files are collected by the mod. Terminal `feed --file` reads only the file you explicitly choose.
+
+For a suspected vulnerability, report the issue privately through the repository owner's GitHub profile before publishing reusable secrets or exploit details. Never include real tokens in an issue.
