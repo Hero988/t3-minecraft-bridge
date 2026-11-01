@@ -53,7 +53,8 @@ Errors have `kind: "error"` and `visibility: "local"`. Automatic answers use `au
 
 | File | Responsibility |
 | --- | --- |
-| `src/main/java/dev/suli/t3minecraft/T3MinecraftClient.java` | Commands, context, game lifecycle, main-thread delivery and public gate. |
+| `src/main/java/dev/suli/t3minecraft/T3MinecraftMod.java` | Forge mod entrypoint; loads client handlers only on the physical client. |
+| `T3MinecraftClient.java` | Commands, context, game lifecycle, main-thread delivery and public gate. |
 | `BridgeTransport.java` | Asynchronous authenticated HTTP, bounded timeouts, no redirects. |
 | `BridgeConfig.java` | Validate loopback configuration before sending credentials. |
 | `ChatSafety.java` | Literal text and public packet limits. |

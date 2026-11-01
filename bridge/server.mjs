@@ -95,7 +95,7 @@ export async function createBridge(config, { ask = askT3 } = {}) {
       }
       const url = new URL(request.url, 'http://127.0.0.1');
       if (request.method === 'GET' && url.pathname === '/v1/status') {
-        return send(200, { version: '1.0.0', threadId: config.threadId, connected: Boolean(connected()),
+        return send(200, { version: '1.1.0', threadId: config.threadId, connected: Boolean(connected()),
           busy, queued: queue.length, notes: notes.length });
       }
       if (request.method === 'GET' && url.pathname === '/v1/context') {

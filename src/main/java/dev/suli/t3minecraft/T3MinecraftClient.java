@@ -5,29 +5,29 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.loading.FMLPaths;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.function.Consumer;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
-public final class T3MinecraftClient implements ClientModInitializer {
-    private final MinecraftClient client = MinecraftClient.getInstance();
+public final class T3MinecraftClient {
+    private final Minecraft client = Minecraft.getInstance();
     private final ArrayDeque<String> recentChat = new ArrayDeque<>();
     private final Queue<String> publicQueue = new ArrayDeque<>();
     private BridgeTransport transport;
@@ -36,10 +36,17 @@ public final class T3MinecraftClient implements ClientModInitializer {
     private long cursor, nextPoll, nextPublic;
     private int failures;
 
-    @Override
-    public void onInitializeClient() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(literal("t3").executes(ctx -> help())
+    public static void initialize() { new T3MinecraftClient().registerEvents(); }
+
+    private void registerEvents() {
+        MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+        MinecraftForge.EVENT_BUS.addListener(this::onLogout);
+        MinecraftForge.EVENT_BUS.addListener(this::onTick);
+        MinecraftForge.EVENT_BUS.addListener(this::onChat);
+    }
+
+    private void registerCommands(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(literal("t3").executes(ctx -> help())
                 .then(literal("help").executes(ctx -> help()))
                 .then(literal("connect").executes(ctx -> connect()))
                 .then(literal("disconnect").executes(ctx -> { disconnect(); local("Disconnected."); return 1; }))
@@ -69,18 +76,23 @@ public final class T3MinecraftClient implements ClientModInitializer {
                     local(enabled ? "Context sharing ON: position, dimension, health, inventory, and targeted block."
                             : "Context sharing OFF.");
                 })));
-        });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, minecraft) -> disconnect());
-        ClientTickEvents.END_CLIENT_TICK.register(minecraft -> tick());
-        ClientReceiveMessageEvents.CHAT.register((message, signed, sender, params, receivedAt) -> {
-            if (!connected || !listening || message.getString().contains("[T3]")) return;
-            String line = ChatSafety.literal(message.getString());
-            recentChat.add(line.substring(0, Math.min(1000, line.length())));
-            while (recentChat.size() > 20) recentChat.removeFirst();
-        });
     }
 
-    private LiteralArgumentBuilder<FabricClientCommandSource> toggle(String name, Consumer<Boolean> setter) {
+    private void onLogout(ClientPlayerNetworkEvent.LoggingOut event) { disconnect(); }
+
+    private void onTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) tick();
+    }
+
+    private void onChat(ClientChatReceivedEvent.Player event) {
+        String text = event.getMessage().getString();
+        if (!connected || !listening || text.contains("[T3]")) return;
+        String line = ChatSafety.literal(text);
+        recentChat.add(line.substring(0, Math.min(1000, line.length())));
+        while (recentChat.size() > 20) recentChat.removeFirst();
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> toggle(String name, Consumer<Boolean> setter) {
         return literal(name)
                 .then(literal("on").executes(ctx -> {
                     if (!requireConnected()) return 0;
@@ -106,7 +118,7 @@ public final class T3MinecraftClient implements ClientModInitializer {
         if (client.player == null) { local("Join a world first."); return 0; }
         if (session != null) { local("Already connected or connecting. Use /t3 disconnect to reset."); return 0; }
         try {
-            transport = new BridgeTransport(BridgeConfig.load(FabricLoader.getInstance().getConfigDir().resolve("t3minecraft.json")));
+            transport = new BridgeTransport(BridgeConfig.load(FMLPaths.CONFIGDIR.get().resolve("t3minecraft.json")));
         } catch (Exception e) { local(e.getMessage()); return 0; }
         session = UUID.randomUUID().toString();
         String captured = session;
@@ -208,10 +220,10 @@ public final class T3MinecraftClient implements ClientModInitializer {
     }
 
     private void tick() {
-        if (!connected || client.player == null || client.world == null) return;
+        if (!connected || client.player == null || client.level == null) return;
         long now = System.currentTimeMillis();
-        if (publicChat && !publicQueue.isEmpty() && now >= nextPublic && client.getNetworkHandler() != null) {
-            client.getNetworkHandler().sendChatMessage(publicQueue.remove());
+        if (publicChat && !publicQueue.isEmpty() && now >= nextPublic && client.getConnection() != null) {
+            client.getConnection().sendChat(publicQueue.remove());
             nextPublic = now + 3000;
         }
         if (polling || now < nextPoll) return;
@@ -251,7 +263,7 @@ public final class T3MinecraftClient implements ClientModInitializer {
         String visibility = event.get("visibility").getAsString();
         int lines = 0;
         for (String line : text.substring(0, Math.min(8000, text.length())).split("\\R")) {
-            local(line, error ? Formatting.RED : Formatting.AQUA);
+            local(line, error ? ChatFormatting.RED : ChatFormatting.AQUA);
             if (++lines >= 80) break;
         }
         boolean wantsPublic = !error && ("public".equals(visibility) || "auto".equals(visibility));
@@ -265,35 +277,35 @@ public final class T3MinecraftClient implements ClientModInitializer {
 
     private JsonObject snapshot() {
         JsonObject data = new JsonObject();
-        if (client.player == null || client.world == null) return data;
+        if (client.player == null || client.level == null) return data;
         data.addProperty("player", client.player.getGameProfile().getName());
-        data.addProperty("dimension", client.world.getRegistryKey().getValue().toString());
+        data.addProperty("dimension", client.level.dimension().location().toString());
         data.addProperty("x", Math.round(client.player.getX() * 10) / 10.0);
         data.addProperty("y", Math.round(client.player.getY() * 10) / 10.0);
         data.addProperty("z", Math.round(client.player.getZ() * 10) / 10.0);
         data.addProperty("health", client.player.getHealth());
-        data.addProperty("food", client.player.getHungerManager().getFoodLevel());
+        data.addProperty("food", client.player.getFoodData().getFoodLevel());
         data.addProperty("experienceLevel", client.player.experienceLevel);
         JsonArray inventory = new JsonArray();
-        for (int i = 0; i < client.player.getInventory().size(); i++) {
-            ItemStack stack = client.player.getInventory().getStack(i);
+        for (int i = 0; i < client.player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = client.player.getInventory().getItem(i);
             if (stack.isEmpty()) continue;
             JsonObject item = new JsonObject();
             item.addProperty("slot", i);
-            item.addProperty("item", Registries.ITEM.getId(stack.getItem()).toString());
+            item.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
             item.addProperty("count", stack.getCount());
             inventory.add(item);
         }
         data.add("inventory", inventory);
-        if (client.crosshairTarget instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-            data.addProperty("targetBlock", Registries.BLOCK.getId(client.world.getBlockState(hit.getBlockPos()).getBlock()).toString());
+        if (client.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
+            data.addProperty("targetBlock", BuiltInRegistries.BLOCK.getKey(client.level.getBlockState(hit.getBlockPos()).getBlock()).toString());
         }
         return data;
     }
 
-    private void local(String message) { local(message, Formatting.GRAY); }
-    private void local(String message, Formatting color) {
-        if (client.player != null) client.inGameHud.getChatHud()
-                .addMessage(Text.literal("[T3] " + ChatSafety.literal(message)).formatted(color));
+    private void local(String message) { local(message, ChatFormatting.GRAY); }
+    private void local(String message, ChatFormatting color) {
+        if (client.player != null) client.gui.getChat()
+                .addMessage(Component.literal("[T3] " + ChatSafety.literal(message)).withStyle(color));
     }
 }

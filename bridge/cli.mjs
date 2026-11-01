@@ -29,7 +29,7 @@ async function main() {
   if (alternate) process.env.T3MC_CONFIG = resolve(alternate);
   const command = args.shift() || 'help';
   if (command === 'help' || command === '--help') {
-    console.log(`T3 Minecraft Bridge 1.0.0 — Node 22+, Java Edition 1.21.1 / Fabric
+    console.log(`T3 Minecraft Bridge 1.1.0 — Node 22+, Java Edition 1.20.1 / Forge
 
   node bridge/cli.mjs init --thread ID --minecraft-dir PATH [--port 37123]
   node bridge/cli.mjs doctor

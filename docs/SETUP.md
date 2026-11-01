@@ -4,7 +4,7 @@
 
 Run the Node bridge and Minecraft on the **same machine**. The default connection is authenticated HTTP on `127.0.0.1:37123`. The bridge invokes the local T3 CLI using `spawn` with an argument array and passes the game prompt through stdin. T3 handles its own local authentication. The bridge never reads your T3 database or copies provider credentials.
 
-Put the mod and Fabric API in the *instance's* `mods` directory. Pass that instance's game directory to `init`. A launcher installation directory and a particular modpack instance directory are often different. Java 21 must be used by Minecraft as well as Gradle.
+Put the mod in the *instance's* `mods` directory. Pass that instance's game directory to `init`. A launcher installation directory and a particular modpack instance directory are often different. Java 17 must be used by Minecraft as well as Gradle.
 
 ## Bridge configuration
 
@@ -44,7 +44,7 @@ The mod's `<instance>/config/t3minecraft.json` contains `bridgeUrl` and `token`.
 
 | Symptom | Check |
 | --- | --- |
-| `/t3` is unknown | Minecraft is exactly 1.21.1, Fabric profile selected, jar and Fabric API in this instance's `mods`. |
+| `/t3` is unknown | Minecraft is exactly 1.20.1, Forge 47.4.28+ profile selected, and the Forge jar is in this instance's `mods`. |
 | Missing configuration | Run `init` with the game directory for this exact instance, then `/t3 connect`. |
 | Cannot reach bridge | Keep `node bridge/cli.mjs start` running. Check both port settings. Run `status`. |
 | Invalid token | Restore matching config files or stop the bridge, back up/remove both files, and rerun `init`. Do not share the token. |

@@ -2,18 +2,22 @@
 
 Research date: **2026-11-01**. This document identifies the primary sources used to choose an integration that can actually be implemented and built.
 
-## Minecraft
+## Minecraft / Forge port (v1.1.0)
 
-This release targets **Java Edition 1.21.1**, a deliberate fixed target for this first version. It does not claim to target the newest Minecraft release. Fabric's [client command documentation for 1.21.1](https://docs.fabricmc.net/1.21.1/develop/commands/basics#client-commands) describes the client command registration API. The mod uses Fabric API callbacks rather than custom mixins:
+The current release targets **Java Edition 1.20.1 with Minecraft Forge**, as requested. The original Fabric 1.21.1 release remains available at tag `v1.0.0`; its test results do not stand in for the Forge port.
 
-- `ClientCommandRegistrationCallback` for `/t3` commands.
-- `ClientReceiveMessageEvents.CHAT` for optional player-chat capture.
-- `ClientTickEvents.END_CLIENT_TICK` for main-thread scheduling.
-- `ClientPlayConnectionEvents.DISCONNECT` for connection cleanup.
+Forge's [1.20.1 getting-started guide](https://docs.minecraftforge.net/en/1.20.1/gettingstarted/) specifies Java 17. The [side separation guide](https://docs.minecraftforge.net/en/1.20.1/concepts/sides/) explains physical client/server separation. The mod uses Forge events and Mojang's official mappings, without mixins or Fabric dependencies:
 
-Fabric API references: [command API](https://maven.fabricmc.net/docs/fabric-api-0.116.17+1.21.1/net/fabricmc/fabric/api/client/command/v2/package-summary.html), [message events](https://maven.fabricmc.net/docs/fabric-api-0.116.17+1.21.1/net/fabricmc/fabric/api/client/message/v1/ClientReceiveMessageEvents.html), and [lifecycle events](https://maven.fabricmc.net/docs/fabric-api-0.116.17+1.21.1/net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents.html). Artifacts are downloaded from [Fabric Maven](https://maven.fabricmc.net/).
+- [`RegisterClientCommandsEvent`](https://github.com/MinecraftForge/MinecraftForge/blob/1.20.x/src/main/java/net/minecraftforge/client/event/RegisterClientCommandsEvent.java): client-only `/t3` commands with Brigadier `CommandSourceStack`.
+- [`ClientChatReceivedEvent.Player`](https://github.com/MinecraftForge/MinecraftForge/blob/1.20.x/src/main/java/net/minecraftforge/client/event/ClientChatReceivedEvent.java): optional player-chat capture; system messages are excluded.
+- `TickEvent.ClientTickEvent` at phase `END`: game-thread scheduling and public output.
+- [`ClientPlayerNetworkEvent.LoggingOut`](https://github.com/MinecraftForge/MinecraftForge/blob/1.20.x/src/main/java/net/minecraftforge/client/event/ClientPlayerNetworkEvent.java): disconnect cleanup.
 
-Build pins: Minecraft `1.21.1`, Yarn `1.21.1+build.3`, Fabric Loader `0.16.14`, Fabric API `0.116.17+1.21.1`, Loom `1.10.5`, Gradle `8.12`, Java `21`. The checked-in Gradle wrapper jar was verified against Gradle's published SHA-256 `2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046`; the distribution ZIP checksum is enforced in the wrapper configuration. Gradle wrapper files are Apache-2.0 licensed; the license is included at `gradle/wrapper/LICENSE`.
+The `@Mod` entrypoint uses `DistExecutor.safeRunWhenOn` to isolate client classes. Forge metadata marks the mod client-only and accepts servers without the mod. Public messages go through `ClientPacketListener.sendChat`; the mod never calls `sendCommand`.
+
+Build pins: Minecraft `1.20.1`, Forge `47.4.28` (the recommended version reported by Forge's [promotion metadata](https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json) when checked), ForgeGradle `6.0.54`, official mappings `1.20.1`, Gradle `8.12`, Java `17`. Configuration follows the official Forge `1.20.1-47.4.28` MDK and [ForgeGradle 6 documentation](https://docs.minecraftforge.net/en/fg-6.x/).
+
+The checked-in Gradle wrapper jar was verified against Gradle's published SHA-256 `2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046`; the distribution ZIP checksum is pinned. Wrapper files retain their Apache-2.0 license in `gradle/wrapper/LICENSE`.
 
 ## T3 Code
 

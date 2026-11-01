@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.10.5'
+    id 'net.minecraftforge.gradle' version '6.0.54'
     id 'maven-publish'
 }
 
@@ -9,11 +9,27 @@ base { archivesName = project.archives_base_name }
 
 repositories { mavenCentral() }
 
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
+}
+
+minecraft {
+    mappings channel: 'official', version: project.minecraft_version
+    runs {
+        configureEach {
+            workingDirectory project.file('run-forge')
+            property 'forge.logging.console.level', 'info'
+            mods {
+                t3minecraft { source sourceSets.main }
+            }
+        }
+        client {}
+    }
+}
+
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -21,14 +37,12 @@ dependencies {
 
 processResources {
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    filesMatching('META-INF/mods.toml') { expand 'version': project.version }
 }
 
-tasks.withType(JavaCompile).configureEach { options.release = 21 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-    withSourcesJar()
-}
+tasks.withType(JavaCompile).configureEach { options.release = 17 }
 test { useJUnitPlatform() }
-jar { from('LICENSE') { rename { "${it}_${project.base.archivesName.get()}" } } }
+jar {
+    from('LICENSE') { rename { "${it}_${project.base.archivesName.get()}" } }
+    finalizedBy 'reobfJar'
+}

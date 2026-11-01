@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+issueTrackerURL="https://github.com/Hero988/t3-minecraft-bridge/issues"
+clientSideOnly=true
+
+[[mods]]
+modId="t3minecraft"
+version="${version}"
+displayName="T3 Minecraft Bridge"
+displayURL="https://github.com/Hero988/t3-minecraft-bridge"
+authors="Suli"
+displayTest="IGNORE_ALL_VERSION"
+description='''Connect Minecraft chat to your T3 Code thread, with optional context sharing and public speech.'''
+
+[[dependencies.t3minecraft]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.28,48)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.t3minecraft]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="CLIENT"

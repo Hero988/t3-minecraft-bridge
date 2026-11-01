@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '17'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -22,9 +22,11 @@ jobs:
       - name: Package bridge and checksums
         shell: bash
         run: |
-          git archive --format=zip --prefix=t3-minecraft-bridge/ -o t3-minecraft-bridge-source.zip HEAD
-          sha256sum build/libs/*.jar t3-minecraft-bridge-source.zip > SHA256SUMS.txt
+          mkdir -p release
+          cp build/libs/*.jar release/
+          git archive --format=zip --prefix=t3-minecraft-bridge/ -o release/t3-minecraft-bridge-source.zip HEAD
+          (cd release && sha256sum *.jar *.zip > SHA256SUMS.txt)
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" build/libs/*.jar t3-minecraft-bridge-source.zip SHA256SUMS.txt --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes

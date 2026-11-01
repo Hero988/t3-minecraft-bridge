@@ -2,9 +2,9 @@
 
 Talk to your **existing T3 Code thread from Minecraft**. Ask questions, feed your agent information, share your inventory and position when you choose, and let it speak in game.
 
-**Minecraft Java Edition 1.21.1 · Fabric · Java 21 · Node.js 22+ · T3 CLI 0.1.6**
+**Minecraft Java Edition 1.20.1 · Forge 47.4.28+ · Java 17 · Node.js 22+ · T3 CLI 0.1.6**
 
-This is a client mod plus a small local Node bridge. The Minecraft server needs no plugin. It uses the model already selected in your T3 thread; the bridge has no separate AI subscription, API key, or model override. Your normal T3/provider limits still apply. This project is independent of T3, Fabric, Mojang, and OpenAI.
+This is a client mod plus a small local Node bridge. The Minecraft server needs no plugin. It uses the model already selected in your T3 thread; the bridge has no separate AI subscription, API key, or model override. Your normal T3/provider limits still apply. This project is independent of T3, Minecraft Forge, Mojang, and OpenAI.
 
 ## What you can do
 
@@ -27,8 +27,8 @@ Use `/t3` or `/t3 help` for help. All commands run on your client. **Public chat
 
 ## Install
 
-1. Install **Minecraft Java Edition 1.21.1**, [Fabric Loader](https://fabricmc.net/use/installer/) **0.16.14 or newer**, and **Fabric API for 1.21.1**. The build uses Fabric API `0.116.17+1.21.1`. Other Minecraft versions and Bedrock are not supported by this release.
-2. From [Releases](https://github.com/Hero988/t3-minecraft-bridge/releases/latest), download `t3-minecraft-bridge-1.0.0.jar` into your Minecraft instance's `mods` folder. Do not install the `-sources.jar`.
+1. Install **Minecraft Java Edition 1.20.1** and [Minecraft Forge](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.20.1.html) **47.4.28 or newer in the 47.x series**. Fabric API is not needed. Other Minecraft versions, Fabric, NeoForge, and Bedrock are not supported by this release.
+2. From [Releases](https://github.com/Hero988/t3-minecraft-bridge/releases/latest), download `t3-minecraft-bridge-forge-1.20.1-1.1.0.jar` into your Minecraft instance's `mods` folder. Do not install the `-sources.jar`.
 3. Download and extract the source ZIP from the same release, or clone this repository. The bridge is in `bridge/` and has **no npm dependencies**.
 4. Install [Node.js 22 or newer](https://nodejs.org/en/download) and a T3 CLI that matches your running T3 Code server. This release was checked against **T3 0.1.6**:
 
@@ -66,7 +66,7 @@ Use `/t3` or `/t3 help` for help. All commands run on your client. **Public chat
 
    `init` creates private `.local/bridge.config.json` and `<instance>/config/t3minecraft.json` with a generated shared token. It refuses to overwrite existing files. Keep the bridge terminal running while you play.
 
-7. Start Minecraft with Fabric, join a world/server, and type:
+7. Start Minecraft with Forge, join a world/server, and type:
 
    ```text
    /t3 connect
@@ -111,7 +111,7 @@ See [the setup and troubleshooting guide](docs/SETUP.md) for Windows launchers, 
 ## Build and verify
 
 ```sh
-# Java 21 is required; the checked-in wrapper downloads Gradle 8.12.
+# Java 17 is required; the checked-in wrapper downloads Gradle 8.12.
 ./gradlew build
 # Windows: .\gradlew.bat build
 
@@ -123,8 +123,10 @@ npm run check
 ./gradlew runClient
 ```
 
-The installable mod is `build/libs/t3-minecraft-bridge-1.0.0.jar`. Java tests cover chat packet safety and configuration boundaries. Node tests cover the real local HTTP routes, session isolation, request deduplication, persistence, limits, and the T3 CLI contract using a fixture executable. CI builds the jar and tests the bridge on Linux, Windows, and macOS. Tagged releases build and publish downloadable assets and SHA-256 checksums.
+The installable mod is `build/libs/t3-minecraft-bridge-forge-1.20.1-1.1.0.jar`. Java tests cover chat packet safety and configuration boundaries. Node tests cover the real local HTTP routes, session isolation, request deduplication, persistence, limits, and the T3 CLI contract using a fixture executable. CI builds the jar and tests the bridge on Linux, Windows, and macOS. Tagged releases build and publish downloadable assets and SHA-256 checksums.
 
 See [VALIDATION.md](docs/VALIDATION.md) for what was actually exercised for this release and what still needs testing on your installation.
+
+The original Fabric 1.21.1 build is retained as [v1.0.0](https://github.com/Hero988/t3-minecraft-bridge/releases/tag/v1.0.0). Use **v1.1.0 or newer** for Forge 1.20.1; do not install both jars.
 
 MIT licensed. Built for Suli's Minecraft/T3 integration request.

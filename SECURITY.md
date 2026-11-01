@@ -10,6 +10,6 @@
 - Player prompts are passed to the CLI through stdin, with `shell: false`. No game text is interpolated into shell commands. The agent itself may still invoke tools if its T3 permissions allow it.
 - Queued jobs are discarded if their game session has disconnected before they start. In-flight T3 turns are not cancelled by disconnect, bridge shutdown, or a wait timeout. Their replies stay associated with the original game session and cannot appear in a newly connected world.
 - Notes persist locally and accompany future submitted requests. Optional context can contain exact coordinates and inventory. Submitted material enters the T3 conversation and the selected provider's normal data handling. Clearing bridge notes does not erase that history.
-- This release has no telemetry or external analytics. Minecraft/Fabric downloads and your T3 provider use their own networks. No screen captures, world files, server IPs, or unrelated local files are collected by the mod. Terminal `feed --file` reads only the file you explicitly choose.
+- This release has no telemetry or external analytics. Minecraft/Forge downloads and your T3 provider use their own networks. No screen captures, world files, server IPs, or unrelated local files are collected by the mod. Terminal `feed --file` reads only the file you explicitly choose.
 
 For a suspected vulnerability, report the issue privately through the repository owner's GitHub profile before publishing reusable secrets or exploit details. Never include real tokens in an issue.
